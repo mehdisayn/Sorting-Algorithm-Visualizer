@@ -96,7 +96,7 @@ def insertion_sort(draw_info, ascending=True, algorithm_name="Insertion Sort", m
 def main():
     run = True
     clock = pygame.time.Clock()
-    n=50
+    n=int(input("Enter number of elements: "))
     min_val = 0
     max_val =100
     lst = generate_starting_list(n,min_val,max_val)
