@@ -18,8 +18,8 @@ class DrawInformation:
         (192,192,192)
     ]
 
-    FONT = pygame.font.SysFont('comicsans', 20)
-    LARGE_FONT = pygame.font.SysFont('comicsans', 40)
+    FONT = pygame.font.SysFont('impact', 20)
+    LARGE_FONT = pygame.font.SysFont('impact', 40)
 
     def __init__(self,width, height, lst):
         self.width = width
