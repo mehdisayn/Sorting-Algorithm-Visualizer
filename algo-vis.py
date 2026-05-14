@@ -239,25 +239,33 @@ def bucket_sort(draw_info, ascending=True, algorithm_name="Bucket Sort", min_val
 
 def radix_sort(draw_info, ascending=True, algorithm_name="Radix Sort", min_val=0, max_val=100):
     lst = draw_info.lst
-    max_val_in_lst = max(lst)
-    exp = 1
-    while max_val_in_lst // exp > 0:
+    def counting_sort(exp):
+        n = len(lst)
+        output = [0] * n
         count = [0] * 10
-        output = [0] * len(lst)
-        for val in lst:
-            index = (val // exp) % 10
+        for i in range(n):
+            index = (lst[i] // exp) % 10
             count[index] += 1
         for i in range(1, 10):
-            count[i] += count[i-1]
-        for i in range(len(lst)-1, -1, -1):
+            count[i] += count[i - 1]
+        for i in range(n - 1, -1, -1):
             index = (lst[i] // exp) % 10
-            output[count[index]-1] = lst[i]
+            output[count[index] - 1] = lst[i]
             count[index] -= 1
-        for i in range(len(lst)):
+        for i in range(n):
             lst[i] = output[i]
             draw(draw_info, {i: draw_info.GREEN}, algorithm_name, ascending, min_val, max_val)
             yield True
+    max_num = max(lst)
+    exp = 1
+    while max_num // exp > 0:
+        yield from counting_sort(exp)
         exp *= 10
+    if not ascending:
+        lst.reverse()
+        for i in range(len(lst)):
+            draw(draw_info, {i: draw_info.RED}, algorithm_name, ascending, min_val, max_val)
+            yield True
     return lst
 
 def tim_sort(draw_info, ascending=True, algorithm_name="Tim Sort", min_val=0, max_val=100):
