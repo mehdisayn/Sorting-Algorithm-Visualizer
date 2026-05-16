@@ -337,6 +337,26 @@ def intro_sort(draw_info, ascending=True, algorithm_name="Intro Sort", min_val=0
     yield from intro_sort_helper(0, len(lst)-1)
     return lst
 
+def selection_sort(draw_info, ascending=True, algorithm_name="Selection Sort", min_val=0, max_val=100):
+    lst = draw_info.lst
+
+    for i in range(len(lst)):
+        min_idx = i
+
+        for j in range(i + 1, len(lst)):
+            if (lst[j] < lst[min_idx] and ascending) or (lst[j] > lst[min_idx] and not ascending):
+                min_idx = j
+
+            draw(draw_info, {j: draw_info.RED, min_idx: draw_info.GREEN}, algorithm_name, ascending, min_val, max_val)
+            yield True
+
+        lst[i], lst[min_idx] = lst[min_idx], lst[i]
+
+        draw(draw_info, {i: draw_info.GREEN, min_idx: draw_info.RED}, algorithm_name, ascending, min_val, max_val)
+        yield True
+
+    return lst
+
 def main():
     run = True
     clock = pygame.time.Clock()
