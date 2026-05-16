@@ -35,28 +35,80 @@ class DrawInformation:
         self.block_height = (self.height -self.TOP_PAD) / (self.max_val - self.min_val)
         self.start_x = self.SIDE_PAD // 2
 
-def draw(draw_info, color_positions={}, algorithm_name="Bubble Sort", ascending=True, min_val=0, max_val=100, duration=None, complexities={}):
+def draw(draw_info, color_positions={}, algorithm_name="Bubble Sort",
+         ascending=True, min_val=0, max_val=100,
+         duration=None, complexities={}, mode="SORT", target=None):
+
     draw_info.window.fill(draw_info.BACKGROUND_COLOR)
-    controls = draw_info.FONT.render("R - Reset | Space - Start Sorting | A - Ascending | D - Descending", 1, draw_info.RED)
-    draw_info.window.blit(controls,(draw_info.width/2-controls.get_width()/2,5))
-    sorting = draw_info.FONT.render("I - Insertion | B - Bubble | M - Merge | Q - Quick | H - Heap | U - Bucket | R - Radix | S - Selection", 1, draw_info.RED)
-    draw_info.window.blit(sorting,(draw_info.width/2-sorting.get_width()/2,30))
-    hybrid = draw_info.FONT.render("T - Tim Sort | N - Intro Sort", 1, draw_info.RED)
-    draw_info.window.blit(hybrid,(draw_info.width/2-hybrid.get_width()/2,55))
-    status = draw_info.FONT.render(f"Current: {algorithm_name} ({'Ascending' if ascending else 'Descending'})", 1, draw_info.RED)
-    draw_info.window.blit(status,(draw_info.width/2-status.get_width()/2,80))
+
+    # ---------------- CONTROLS ----------------
+    controls = draw_info.FONT.render(
+        "R - Reset | Space - Run | A - Asc | D - Desc | P - Target",
+        1, draw_info.RED
+    )
+    draw_info.window.blit(controls, (draw_info.width/2 - controls.get_width()/2, 5))
+
+    # ---------------- ALGORITHMS INFO ----------------
+    sorting = draw_info.FONT.render(
+        "Sorting: I-Insertion | B-Bubble | M-Merge | Q-Quick | H-Heap | U-Bucket | X-Radix | S-Selection",
+        1, draw_info.RED
+    )
+    draw_info.window.blit(sorting, (draw_info.width/2 - sorting.get_width()/2, 30))
+
+    searching = draw_info.FONT.render(
+        "Searching: L-Linear | Y-Binary",
+        1, draw_info.GREEN
+    )
+    draw_info.window.blit(searching, (draw_info.width/2 - searching.get_width()/2, 55))
+
+    hybrid = draw_info.FONT.render(
+        "T-Tim Sort | N-Intro Sort",
+        1, draw_info.RED
+    )
+    draw_info.window.blit(hybrid, (draw_info.width/2 - hybrid.get_width()/2, 80))
+
+    # ---------------- MODE ----------------
+    mode_text = draw_info.FONT.render(
+        f"Mode: {mode} | Current: {algorithm_name}",
+        1, draw_info.WHITE
+    )
+    draw_info.window.blit(mode_text, (draw_info.width/2 - mode_text.get_width()/2, 105))
+
+    # ---------------- SEARCH TARGET ----------------
+    if mode == "SEARCH":
+        target_text = draw_info.FONT.render(
+            f"Target: {'Not Set' if target is None else target}",
+            1, draw_info.GREEN
+        )
+        draw_info.window.blit(target_text, (draw_info.width/2 - target_text.get_width()/2, 130))
+
+    # ---------------- TIME / COMPLEXITY ----------------
     if duration is not None:
-        complexity_text = draw_info.FONT.render(f"Time Complexity: {complexities.get(algorithm_name, 'Unknown')}", 1, draw_info.RED)
-        draw_info.window.blit(complexity_text, (draw_info.width/2 - complexity_text.get_width()/2, 105))
+        complexity_text = draw_info.FONT.render(
+            f"Time Complexity: {complexities.get(algorithm_name, 'Unknown')}",
+            1, draw_info.RED
+        )
+        draw_info.window.blit(complexity_text,
+                               (draw_info.width/2 - complexity_text.get_width()/2, 155))
+
+        # format time nicely
         if duration < 1e-6:
             time_str = f"{duration * 1e9:.2f} ns"
         elif duration < 1e-3:
             time_str = f"{duration * 1e6:.2f} μs"
         else:
             time_str = f"{duration:.2f} s"
-        time_text = draw_info.FONT.render(f"Time Taken: {time_str}", 1, draw_info.RED)
-        draw_info.window.blit(time_text, (draw_info.width/2 - time_text.get_width()/2, 130))
+
+        time_text = draw_info.FONT.render(
+            f"Time Taken: {time_str}",
+            1, draw_info.RED
+        )
+        draw_info.window.blit(time_text,
+                               (draw_info.width/2 - time_text.get_width()/2, 180))
+
+    # ---------------- DRAW ARRAY ----------------
     draw_list(draw_info, color_positions)
+
     pygame.display.update()
 
 def draw_list(draw_info, color_positions={}):
@@ -357,22 +409,77 @@ def selection_sort(draw_info, ascending=True, algorithm_name="Selection Sort", m
 
     return lst
 
+def linear_search(draw_info, target, algorithm_name="Linear Search"):
+    lst = draw_info.lst
+
+    for i in range(len(lst)):
+        draw(draw_info, {i: draw_info.RED}, algorithm_name, True)
+        yield True
+
+        if lst[i] == target:
+            draw(draw_info, {i: draw_info.GREEN}, algorithm_name, True)
+            yield True
+            return i
+
+    return -1
+
+def binary_search(draw_info, target, algorithm_name="Binary Search"):
+    lst = sorted(draw_info.lst)  # keep sorted view
+
+    left = 0
+    right = len(lst) - 1
+
+    while left <= right:
+        mid = (left + right) // 2
+
+        color_positions = {
+            mid: draw_info.RED
+        }
+
+        draw(draw_info, color_positions, algorithm_name, True)
+        yield True
+
+        if lst[mid] == target:
+            draw(draw_info, {mid: draw_info.GREEN}, algorithm_name, True)
+            yield True
+            return mid
+
+        elif lst[mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+
+    return -1
 def main():
     run = True
     clock = pygame.time.Clock()
-    n=int(input("Enter number of elements: "))
+
+    n = int(input("Enter number of elements: "))
     min_val = 0
-    max_val =100
-    lst = generate_starting_list(n,min_val,max_val)
+    max_val = 100
+
+    lst = generate_starting_list(n, min_val, max_val)
     width = max(800, n + 200)
-    draw_info = DrawInformation(width,600,lst)
-    sorting = False
+    draw_info = DrawInformation(width, 600, lst)
+
+    # STATE SYSTEM
+    mode = "SORT"   # SORT or SEARCH
+    running = False
+
     ascending = True
+    target = None
+
     sorting_algorithm = bubble_sort
-    sorting_algo_name = "Bubble Sort"
+    search_algorithm = None
+
     sorting_algo_gena = None
+    search_gen = None
+
+    current_name = "Bubble Sort"
+
     start_time = None
     duration = None
+
     complexities = {
         "Bubble Sort": "O(n²)",
         "Insertion Sort": "O(n²)",
@@ -382,71 +489,142 @@ def main():
         "Bucket Sort": "O(n + k)",
         "Radix Sort": "O(n * d)",
         "Tim Sort": "O(n log n)",
-        "Intro Sort": "O(n log n)"
+        "Intro Sort": "O(n log n)",
+        "Selection Sort": "O(n²)",
+        "Linear Search": "O(n)",
+        "Binary Search": "O(log n)"
     }
+
     while run:
         clock.tick(60)
-        if sorting:
+
+        # ---------------- EXECUTION ENGINE ----------------
+        if running:
             try:
-                next(sorting_algo_gena)
+                if mode == "SORT":
+                    next(sorting_algo_gena)
+
+                elif mode == "SEARCH":
+                    next(search_gen)
+
             except StopIteration:
-                sorting = False
+                running = False
+
                 if start_time is not None:
-                    end_time = time.time()
-                    duration = end_time - start_time
+                    duration = time.time() - start_time
                     start_time = None
+
         else:
-            draw(draw_info, {}, sorting_algo_name, ascending, min_val, max_val, duration, complexities)
+            draw(draw_info, {}, current_name, ascending,min_val, max_val, duration,complexities, mode, target)
+
+        # ---------------- EVENTS ----------------
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
+                continue
+
             if event.type != pygame.KEYDOWN:
                 continue
+
+            # RESET
             if event.key == pygame.K_r:
                 lst = generate_starting_list(n, min_val, max_val)
                 draw_info.set_lst(lst)
-                sorting = False
+                running = False
                 duration = None
-            elif event.key == pygame.K_SPACE and not sorting:
-                sorting = True
+
+            # START EXECUTION
+            elif event.key == pygame.K_SPACE and not running:
+
+                running = True
                 start_time = time.time()
-                sorting_algo_gena = sorting_algorithm(draw_info, ascending, sorting_algo_name, min_val, max_val)
-            elif event.key == pygame.K_b and not sorting:
+
+                if mode == "SORT":
+                    sorting_algo_gena = sorting_algorithm(
+                        draw_info, ascending, current_name, min_val, max_val
+                    )
+
+                elif mode == "SEARCH":
+                    if target is None:
+                        target = int(input("Enter target value: "))
+
+                    search_gen = search_algorithm(draw_info, target)
+
+            # ---------------- SORT SELECTION ----------------
+            elif event.key == pygame.K_b and not running:
+                mode = "SORT"
                 sorting_algorithm = bubble_sort
-                sorting_algo_name = "Bubble Sort"
-            elif event.key == pygame.K_i and not sorting:
+                current_name = "Bubble Sort"
+
+            elif event.key == pygame.K_i and not running:
+                mode = "SORT"
                 sorting_algorithm = insertion_sort
-                sorting_algo_name = "Insertion Sort"
-            elif event.key == pygame.K_m and not sorting:
+                current_name = "Insertion Sort"
+
+            elif event.key == pygame.K_m and not running:
+                mode = "SORT"
                 sorting_algorithm = merge_sort
-                sorting_algo_name = "Merge Sort"
-            elif event.key == pygame.K_q and not sorting:
+                current_name = "Merge Sort"
+
+            elif event.key == pygame.K_q and not running:
+                mode = "SORT"
                 sorting_algorithm = quick_sort
-                sorting_algo_name = "Quick Sort"
-            elif event.key == pygame.K_h and not sorting:
+                current_name = "Quick Sort"
+
+            elif event.key == pygame.K_h and not running:
+                mode = "SORT"
                 sorting_algorithm = heap_sort
-                sorting_algo_name = "Heap Sort"
-            elif event.key == pygame.K_u and not sorting:
+                current_name = "Heap Sort"
+
+            elif event.key == pygame.K_u and not running:
+                mode = "SORT"
                 sorting_algorithm = bucket_sort
-                sorting_algo_name = "Bucket Sort"
-            elif event.key == pygame.K_x and not sorting:
+                current_name = "Bucket Sort"
+
+            elif event.key == pygame.K_x and not running:
+                mode = "SORT"
                 sorting_algorithm = radix_sort
-                sorting_algo_name = "Radix Sort"
-            elif event.key == pygame.K_t and not sorting:
+                current_name = "Radix Sort"
+
+            elif event.key == pygame.K_t and not running:
+                mode = "SORT"
                 sorting_algorithm = tim_sort
-                sorting_algo_name = "Tim Sort"
-            elif event.key == pygame.K_n and not sorting:
+                current_name = "Tim Sort"
+
+            elif event.key == pygame.K_n and not running:
+                mode = "SORT"
                 sorting_algorithm = intro_sort
-                sorting_algo_name = "Intro Sort"
-            elif event.key == pygame.K_s and not sorting:
+                current_name = "Intro Sort"
+
+            elif event.key == pygame.K_s and not running:
+                mode = "SORT"
                 sorting_algorithm = selection_sort
-                sorting_algo_name = "Selection Sort"
-            elif event.key == pygame.K_a and not sorting:
+                current_name = "Selection Sort"
+
+            # ---------------- SEARCH MODE ----------------
+            elif event.key == pygame.K_l and not running:
+                mode = "SEARCH"
+                search_algorithm = linear_search
+                current_name = "Linear Search"
+
+            elif event.key == pygame.K_y and not running:
+                mode = "SEARCH"
+                search_algorithm = binary_search
+                current_name = "Binary Search"
+
+            # TARGET INPUT
+            elif event.key == pygame.K_p:
+                target = int(input("Enter target value: "))
+
+            # ORDER CONTROL
+            elif event.key == pygame.K_a and not running:
                 ascending = True
-            elif event.key == pygame.K_d and not sorting:
+
+            elif event.key == pygame.K_d and not running:
                 ascending = False
 
     pygame.quit()
+
 
 if __name__ == "__main__":
     main()
