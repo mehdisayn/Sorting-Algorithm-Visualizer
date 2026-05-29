@@ -17,6 +17,10 @@ const sizeValue = $("size-value");
 const customInput = $("custom-input");
 const uploadBtn = $("upload-btn");
 const fileInput = $("file-input");
+const fileChip = $("file-chip");
+const fileChipName = $("file-chip-name");
+const fileRemove = $("file-remove");
+const dropOverlay = $("drop-overlay");
 const randomizeBtn = $("randomize-btn");
 const stepBtn = $("step-btn");
 const pauseBtn = $("pause-btn");
@@ -143,13 +147,6 @@ function render(highlights = {}) {
 }
 
 // ---------- Info drawer ----------
-const COLOR_VARS = {
-  compare: "--bar-compare",
-  swap: "--bar-swap",
-  sorted: "--bar-sorted",
-  target: "--bar-target",
-};
-
 function yesNo(v) {
   if (v === null || v === undefined) return "n/a";
   return v ? "Yes" : "No";
@@ -165,7 +162,7 @@ function escapeHtml(s) {
 function buildDrawerBody(d) {
   const legendRows = LEGEND.map(
     (l) =>
-      `<div class="legend-item"><span class="legend-swatch" style="background:var(${COLOR_VARS[l.state]})"></span>${l.label}</div>`
+      `<div class="legend-item"><span class="legend-swatch s-${l.state}"></span>${l.label}</div>`
   ).join("");
 
   return `
@@ -331,6 +328,7 @@ function closeExportMenu() { exportMenu.hidden = true; }
 
 // ---------- Array generation / input ----------
 function regenerate(n = Number(sizeSlider.value)) {
+  clearFileChip();
   cancelLoop();
   state.gen = null;
   state.running = false;
@@ -351,19 +349,20 @@ function regenerate(n = Number(sizeSlider.value)) {
 }
 
 function applyCustomValues() {
-  if (isActive()) return;
+  if (isActive()) return false;
   const raw = customInput.value.trim();
-  if (!raw) return;
+  if (!raw) return false;
   const parts = raw.split(",").map((p) => p.trim()).filter((p) => p.length);
   const nums = parts.map(Number);
   if (nums.some((x) => !Number.isFinite(x) || !Number.isInteger(x) || x < 0)) {
     setStatus("Custom values must be non-negative integers, comma-separated.", true);
-    return;
+    return false;
   }
   if (nums.length < 2) {
     setStatus("Enter at least 2 values.", true);
-    return;
+    return false;
   }
+  clearFileChip();
   cancelLoop();
   state.gen = null;
   state.finished = false;
@@ -380,6 +379,40 @@ function applyCustomValues() {
   updateButtons();
   updateExport();
   render();
+  return true;
+}
+
+// ---------- File loading (upload + drag-and-drop) ----------
+function showFileChip(name) {
+  fileChipName.textContent = name;
+  fileChipName.title = name;
+  fileChip.hidden = false;
+  uploadBtn.hidden = true;
+}
+
+function clearFileChip() {
+  fileChip.hidden = true;
+  uploadBtn.hidden = false;
+}
+
+function loadFile(file) {
+  if (!file || isActive()) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    // Accept .txt / .csv / .json: pull every number token from the text.
+    const tokens = String(reader.result).match(/-?\d+(?:\.\d+)?/g);
+    if (!tokens || tokens.length < 2) {
+      setStatus("No usable numbers found in that file (need at least 2).", true);
+      return;
+    }
+    customInput.value = tokens.join(", ");
+    if (applyCustomValues()) {
+      state.dataSource = `File: ${file.name}`;
+      showFileChip(file.name);
+    }
+  };
+  reader.onerror = () => setStatus("Could not read that file.", true);
+  reader.readAsText(file);
 }
 
 // ---------- Generator lifecycle ----------
@@ -593,6 +626,51 @@ sizeSlider.addEventListener("input", () => {
 customInput.addEventListener("change", applyCustomValues);
 customInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") applyCustomValues();
+});
+
+uploadBtn.addEventListener("click", () => {
+  if (isActive()) return;
+  fileInput.click();
+});
+fileInput.addEventListener("change", () => {
+  const file = fileInput.files && fileInput.files[0];
+  loadFile(file);
+  fileInput.value = ""; // allow re-uploading the same file
+});
+fileRemove.addEventListener("click", () => {
+  if (isActive()) return;
+  clearFileChip();
+  regenerate(Number(sizeSlider.value));
+});
+
+// Drag-and-drop anywhere on the window
+function dragHasFiles(e) {
+  return e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files");
+}
+let dragDepth = 0;
+window.addEventListener("dragenter", (e) => {
+  if (!dragHasFiles(e) || isActive()) return;
+  e.preventDefault();
+  dragDepth++;
+  dropOverlay.hidden = false;
+});
+window.addEventListener("dragover", (e) => {
+  if (!dragHasFiles(e) || isActive()) return;
+  e.preventDefault();
+});
+window.addEventListener("dragleave", (e) => {
+  if (!dragHasFiles(e)) return;
+  dragDepth = Math.max(0, dragDepth - 1);
+  if (dragDepth === 0) dropOverlay.hidden = true;
+});
+window.addEventListener("drop", (e) => {
+  if (!dragHasFiles(e)) return;
+  e.preventDefault();
+  dragDepth = 0;
+  dropOverlay.hidden = true;
+  if (isActive()) return;
+  const file = e.dataTransfer.files && e.dataTransfer.files[0];
+  loadFile(file);
 });
 
 randomizeBtn.addEventListener("click", () => regenerate(Number(sizeSlider.value)));

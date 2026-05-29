@@ -191,6 +191,62 @@ input[type="text"], input[type="number"] { min-width: 120px; }
 .input-row input { flex: 1; }
 .btn-sm { padding: 8px 12px; font-size: 0.82rem; white-space: nowrap; }
 
+.file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-sm);
+  padding: 0 4px 0 11px;
+  max-width: 200px;
+}
+.file-chip[hidden] { display: none; }
+.file-chip-name {
+  font-size: 0.8rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.file-remove {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.78rem;
+  line-height: 1;
+  padding: 6px;
+  border-radius: 6px;
+  transition: color 140ms ease, background 140ms ease;
+}
+.file-remove:hover { color: var(--bar-swap); background: var(--elev); }
+
+/* ---------- Drag-and-drop overlay ---------- */
+.drop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  pointer-events: none;
+}
+.drop-overlay[hidden] { display: none; }
+.drop-overlay-inner {
+  border: 2px dashed var(--accent);
+  border-radius: var(--r-lg);
+  padding: 44px 60px;
+  text-align: center;
+  background: var(--panel);
+  box-shadow: 0 24px 70px -24px rgba(0, 0, 0, 0.7);
+}
+.drop-icon { font-size: 2.4rem; line-height: 1; color: var(--accent); }
+.drop-overlay-inner p { margin: 14px 0 4px; font-size: 1.05rem; color: var(--text); }
+.drop-overlay-inner span { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-faint); }
+
 .select-wrap { position: relative; }
 .select-wrap::after {
   content: "▾";
@@ -345,6 +401,10 @@ input:focus-visible, select:focus-visible {
 .legend { display: flex; flex-direction: column; gap: 9px; }
 .legend-item { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text-muted); }
 .legend-swatch { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; }
+.legend-swatch.s-compare { background: var(--bar-compare); }
+.legend-swatch.s-swap { background: var(--bar-swap); }
+.legend-swatch.s-sorted { background: var(--bar-sorted); }
+.legend-swatch.s-target { background: var(--bar-target); }
 
 .pseudo {
   margin: 0;

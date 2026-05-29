@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'self'; object-src 'none'; form-action 'none'" />
   <title>Sorting Algorithm Visualizer</title>
   <meta name="description" content="Interactive visualizer for sorting and searching algorithms: bubble, merge, quick, heap, radix and more, animated step by step." />
   <meta name="theme-color" content="#08090c" />
@@ -91,7 +92,11 @@
         <label for="custom-input">Custom values</label>
         <div class="input-row">
           <input id="custom-input" type="text" placeholder="e.g. 5, 3, 8, 1, 9" />
-          <button id="upload-btn" type="button" class="btn btn-secondary btn-sm" title="Upload a .txt, .csv or .json file of numbers">Upload</button>
+          <button id="upload-btn" type="button" class="btn btn-secondary btn-sm" title="Upload or drag-and-drop a .txt, .csv or .json file of numbers">Upload</button>
+          <span id="file-chip" class="file-chip" hidden>
+            <span id="file-chip-name" class="file-chip-name"></span>
+            <button id="file-remove" class="file-remove" type="button" aria-label="Remove file">✕</button>
+          </span>
           <input id="file-input" type="file" accept=".txt,.csv,.json,text/plain,text/csv,application/json" hidden />
         </div>
       </div>
@@ -117,6 +122,14 @@
         <a href="https://ridwanhasankhandakar.github.io/rrhin/" target="_blank" rel="noopener noreferrer">Ridwan Hasan Khandakar</a>
       </span>
     </footer>
+  </div>
+
+  <div id="drop-overlay" class="drop-overlay" hidden>
+    <div class="drop-overlay-inner">
+      <div class="drop-icon">⭳</div>
+      <p>Drop your file to load numbers</p>
+      <span>.txt, .csv or .json</span>
+    </div>
   </div>
 
   <div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
