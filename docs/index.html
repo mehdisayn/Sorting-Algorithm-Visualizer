@@ -13,7 +13,7 @@
 <body>
   <div class="app">
     <header class="header">
-      <h1 class="title">Sorting Visualizer</h1>
+      <h1 class="title">Sorting Algorithm Visualizer</h1>
       <div class="header-meta">
         <button id="algo-name" class="algo-name" type="button" title="View how this algorithm works">Bubble Sort</button>
         <span id="algo-complexity" class="complexity">O(n²)</span>
@@ -125,6 +125,44 @@
         <a href="https://ridwanhasankhandakar.github.io/rrhin/" target="_blank" rel="noopener noreferrer">Ridwan Hasan Khandakar</a>
       </span>
     </footer>
+  </div>
+
+  <div id="onboard" class="onboard" hidden>
+    <div class="onboard-card" role="dialog" aria-modal="true" aria-labelledby="onboard-title">
+      <div class="onboard-head">
+        <h2 id="onboard-title">Welcome to the Sorting Algorithm Visualizer</h2>
+        <p>Watch sorting and searching algorithms run step by step. A quick tour:</p>
+      </div>
+      <ul class="tips">
+        <li>
+          <span class="tip-key">Pick</span>
+          <div><strong>Choose an algorithm</strong><p>10 sorts and 2 searches in the Algorithm dropdown.</p></div>
+        </li>
+        <li>
+          <span class="tip-key">Play</span>
+          <div><strong>Run, Pause, Step</strong><p>Play it, pause anytime, or step through one operation at a time.</p></div>
+        </li>
+        <li>
+          <span class="tip-key">Data</span>
+          <div><strong>Shape the input</strong><p>Set the Size, pick a distribution, or enter Custom values (Space adds commas).</p></div>
+        </li>
+        <li>
+          <span class="tip-key">Load</span>
+          <div><strong>Upload or drag-and-drop</strong><p>Drop a .txt, .csv or .json file of numbers anywhere on the page.</p></div>
+        </li>
+        <li>
+          <span class="tip-key">Learn</span>
+          <div><strong>How it works</strong><p>Click the algorithm name or the ? button for the idea, complexity, and pseudocode.</p></div>
+        </li>
+        <li>
+          <span class="tip-key">Save</span>
+          <div><strong>Export results</strong><p>Download a run report (.txt) or a visualization (.png) after a run.</p></div>
+        </li>
+      </ul>
+      <div class="onboard-actions">
+        <button id="onboard-start" type="button" class="btn btn-primary">Get started</button>
+      </div>
+    </div>
   </div>
 
   <div id="custom-backdrop" class="modal-backdrop" hidden></div>

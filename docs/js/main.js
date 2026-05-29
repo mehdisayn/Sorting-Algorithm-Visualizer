@@ -31,6 +31,8 @@ const stepBtn = $("step-btn");
 const pauseBtn = $("pause-btn");
 const runBtn = $("run-btn");
 const resetBtn = $("reset-btn");
+const onboard = $("onboard");
+const onboardStart = $("onboard-start");
 const themeToggle = $("theme-toggle");
 const algoName = $("algo-name");
 const algoComplexity = $("algo-complexity");
@@ -589,10 +591,29 @@ drawerClose.addEventListener("click", closeDrawer);
 drawerBackdrop.addEventListener("click", closeDrawer);
 window.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
+  if (!onboard.hidden) dismissOnboard();
   if (isDrawerOpen()) closeDrawer();
   if (!exportMenu.hidden) closeExportMenu();
   if (isCustomOpen()) closeCustomModal();
 });
+
+// ---------- Onboarding (first visit) ----------
+const ONBOARD_KEY = "sav-onboarded-v1";
+function dismissOnboard() {
+  onboard.hidden = true;
+  try { localStorage.setItem(ONBOARD_KEY, "1"); } catch (e) { /* storage unavailable */ }
+}
+onboardStart.addEventListener("click", dismissOnboard);
+onboard.addEventListener("click", (e) => { if (e.target === onboard) dismissOnboard(); });
+
+function maybeShowOnboarding() {
+  let seen = false;
+  try { seen = localStorage.getItem(ONBOARD_KEY) === "1"; } catch (e) { seen = false; }
+  if (!seen) {
+    onboard.hidden = false;
+    onboardStart.focus();
+  }
+}
 
 exportBtn.addEventListener("click", (e) => {
   e.stopPropagation();
@@ -742,3 +763,4 @@ window.addEventListener("resize", () => {
 // ---------- Init ----------
 syncAlgoMeta();
 regenerate(Number(sizeSlider.value));
+maybeShowOnboarding();
