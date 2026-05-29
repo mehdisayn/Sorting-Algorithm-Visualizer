@@ -18,6 +18,7 @@
         <button id="algo-name" class="algo-name" type="button" title="View how this algorithm works">Bubble Sort</button>
         <span id="algo-complexity" class="complexity">O(n²)</span>
         <button id="info-btn" class="icon-btn" type="button" aria-label="Algorithm details">?</button>
+        <button id="help-btn" class="icon-btn" type="button" aria-label="Help and keyboard shortcuts">⌨</button>
         <div class="export">
           <button id="export-btn" class="icon-btn" type="button" aria-label="Download results" aria-haspopup="true" disabled>⭳</button>
           <div id="export-menu" class="export-menu" role="menu" hidden>
@@ -31,6 +32,8 @@
 
     <main class="canvas-wrap">
       <canvas id="canvas"></canvas>
+      <button id="fs-close" class="icon-btn fs-close" type="button" aria-label="Exit fullscreen" hidden>✕</button>
+      <div id="zoom-hint" class="zoom-hint" hidden>Drag or ← / → to pan · click or Esc to exit</div>
     </main>
 
     <section class="controls" aria-label="Controls">
@@ -159,6 +162,16 @@
           <div><strong>Export results</strong><p>Download a run report (.txt) or a visualization (.png) after a run.</p></div>
         </li>
       </ul>
+      <h3 class="onboard-subhead">Keyboard shortcuts</h3>
+      <table class="shortcuts">
+        <tr><td><kbd>Space</kbd></td><td>Run / Pause</td></tr>
+        <tr><td><kbd>S</kbd></td><td>Step one operation</td></tr>
+        <tr><td><kbd>R</kbd></td><td>Reset (new array)</td></tr>
+        <tr><td><kbd>A</kbd> / <kbd>D</kbd></td><td>Sort ascending / descending</td></tr>
+        <tr><td><kbd>T</kbd></td><td>Toggle light / dark theme</td></tr>
+        <tr><td><kbd>?</kbd></td><td>Open this help</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Close dialogs</td></tr>
+      </table>
       <div class="onboard-actions">
         <button id="onboard-start" type="button" class="btn btn-primary">Get started</button>
       </div>

@@ -33,6 +33,7 @@ const runBtn = $("run-btn");
 const resetBtn = $("reset-btn");
 const onboard = $("onboard");
 const onboardStart = $("onboard-start");
+const helpBtn = $("help-btn");
 const themeToggle = $("theme-toggle");
 const algoName = $("algo-name");
 const algoComplexity = $("algo-complexity");
@@ -65,6 +66,7 @@ const state = {
   dataSource: "random",
   inputSnapshot: [],
   lastRun: null,
+  lastHighlights: {},
   // timing across running segments only (excludes pauses / manual stepping)
   elapsed: 0,
   segStart: 0,
@@ -152,8 +154,82 @@ function updateButtons() {
 }
 
 function render(highlights = {}) {
+  state.lastHighlights = highlights;
   viz.render(state.arr, highlights);
 }
+
+function renderCurrent() {
+  viz.render(state.arr, state.lastHighlights || {});
+}
+
+// ---------- Canvas fullscreen + pan ----------
+const canvasWrap = document.querySelector(".canvas-wrap");
+const zoomHint = $("zoom-hint");
+const fsClose = $("fs-close");
+
+const VISIBLE_BARS = 30; // how many bars fill the screen when expanded
+
+function panStep() {
+  return Math.max(40, viz.cssWidth * 0.12);
+}
+
+function isFullscreen() {
+  return canvasWrap.classList.contains("fullscreen");
+}
+
+function expandCanvas() {
+  canvasWrap.classList.add("fullscreen", "expanded");
+  viz.resize(); // canvas now fills the whole window
+  const n = state.arr.length;
+  viz.zoom = n > VISIBLE_BARS ? n / VISIBLE_BARS : 1; // 30 bars at a time
+  viz.panX = 0;
+  fsClose.hidden = false;
+  zoomHint.hidden = viz.zoom <= 1; // only show pan hint when there's more to pan
+  renderCurrent();
+}
+
+function collapseCanvas() {
+  canvasWrap.classList.remove("fullscreen", "expanded", "grabbing");
+  viz.zoom = 1;
+  viz.panX = 0;
+  fsClose.hidden = true;
+  zoomHint.hidden = true;
+  viz.resize(); // back to the in-page panel size
+  renderCurrent();
+}
+
+function toggleExpand() {
+  if (isFullscreen()) collapseCanvas();
+  else expandCanvas();
+}
+
+fsClose.addEventListener("click", collapseCanvas);
+
+let ptrDown = false, ptrMoved = false, ptrStartX = 0, ptrStartPan = 0;
+canvas.addEventListener("pointerdown", (e) => {
+  ptrDown = true;
+  ptrMoved = false;
+  ptrStartX = e.clientX;
+  ptrStartPan = viz.panX;
+  try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+});
+canvas.addEventListener("pointermove", (e) => {
+  if (!ptrDown) return;
+  const dx = e.clientX - ptrStartX;
+  if (Math.abs(dx) > 4) ptrMoved = true;
+  if (viz.zoom > 1 && ptrMoved) {
+    viz.setPan(ptrStartPan - dx);
+    canvasWrap.classList.add("grabbing");
+    renderCurrent();
+  }
+});
+canvas.addEventListener("pointerup", (e) => {
+  if (!ptrDown) return;
+  ptrDown = false;
+  canvasWrap.classList.remove("grabbing");
+  try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+  if (!ptrMoved) toggleExpand(); // a click (no drag) toggles expand
+});
 
 // ---------- Info drawer ----------
 function yesNo(v) {
@@ -595,6 +671,7 @@ window.addEventListener("keydown", (e) => {
   if (isDrawerOpen()) closeDrawer();
   if (!exportMenu.hidden) closeExportMenu();
   if (isCustomOpen()) closeCustomModal();
+  if (isFullscreen()) collapseCanvas();
 });
 
 // ---------- Onboarding (first visit) ----------
@@ -605,6 +682,59 @@ function dismissOnboard() {
 }
 onboardStart.addEventListener("click", dismissOnboard);
 onboard.addEventListener("click", (e) => { if (e.target === onboard) dismissOnboard(); });
+
+function openHelp() {
+  onboard.hidden = false;
+  onboardStart.focus();
+}
+helpBtn.addEventListener("click", openHelp);
+
+// ---------- Keyboard shortcuts ----------
+function togglePlay() {
+  if (isActive()) pauseToggle();
+  else run();
+}
+
+window.addEventListener("keydown", (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const tag = e.target.tagName;
+  if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA" || e.target.isContentEditable) return;
+  // let dialogs own the keyboard (Esc handled separately)
+  if (!onboard.hidden || isCustomOpen()) return;
+
+  switch (e.key) {
+    case " ":
+      e.preventDefault();
+      togglePlay();
+      break;
+    case "s": case "S":
+      e.preventDefault();
+      stepOnce();
+      break;
+    case "r": case "R":
+      regenerate(Number(sizeSlider.value));
+      break;
+    case "a": case "A":
+      setOrder(true);
+      break;
+    case "d": case "D":
+      setOrder(false);
+      break;
+    case "t": case "T":
+      toggleTheme();
+      break;
+    case "?":
+      e.preventDefault();
+      openHelp();
+      break;
+    case "ArrowLeft":
+      if (viz.zoom > 1) { e.preventDefault(); viz.setPan(viz.panX - panStep()); renderCurrent(); }
+      break;
+    case "ArrowRight":
+      if (viz.zoom > 1) { e.preventDefault(); viz.setPan(viz.panX + panStep()); renderCurrent(); }
+      break;
+  }
+});
 
 function maybeShowOnboarding() {
   let seen = false;
@@ -744,19 +874,20 @@ pauseBtn.addEventListener("click", pauseToggle);
 stepBtn.addEventListener("click", stepOnce);
 resetBtn.addEventListener("click", () => regenerate(Number(sizeSlider.value)));
 
-themeToggle.addEventListener("click", () => {
+function toggleTheme() {
   const root = document.documentElement;
   root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
   viz.refreshColors();
   render();
-});
+}
+themeToggle.addEventListener("click", toggleTheme);
 
 let resizeRaf = null;
 window.addEventListener("resize", () => {
   if (resizeRaf) cancelAnimationFrame(resizeRaf);
   resizeRaf = requestAnimationFrame(() => {
     viz.resize();
-    render();
+    renderCurrent();
   });
 });
 

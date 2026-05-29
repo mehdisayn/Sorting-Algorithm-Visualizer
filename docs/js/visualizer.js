@@ -7,8 +7,18 @@ export class Visualizer {
     this.ctx = canvas.getContext("2d");
     this.cssWidth = 0;
     this.cssHeight = 0;
+    this.zoom = 1;   // 1 = fit-to-width; >1 = expanded/zoomed
+    this.panX = 0;   // horizontal scroll offset in CSS px
     this.refreshColors();
     this.resize();
+  }
+
+  maxPan() {
+    return Math.max(0, this.cssWidth * this.zoom - this.cssWidth);
+  }
+
+  setPan(x) {
+    this.panX = Math.min(Math.max(x, 0), this.maxPan());
   }
 
   refreshColors() {
@@ -44,14 +54,17 @@ export class Visualizer {
     const n = arr.length;
     if (n === 0) return;
 
+    this.setPan(this.panX); // keep within bounds (e.g. after resize / new data)
+
+    const content = w * this.zoom;
+    const gap = n > 60 && this.zoom === 1 ? 0 : Math.max(1, Math.floor((content / n) * 0.18));
+    const barW = (content - gap * (n - 1)) / n;
+    const maxVal = Math.max(...arr, 1);
+
     const padTop = 12;
-    const showLabels = n <= 30;
+    const showLabels = barW >= 22;
     const labelSpace = showLabels ? 18 : 0;
     const usableH = h - padTop - labelSpace;
-
-    const gap = n > 60 ? 0 : Math.max(1, Math.floor((w / n) * 0.18));
-    const barW = (w - gap * (n - 1)) / n;
-    const maxVal = Math.max(...arr, 1);
 
     // faint horizontal gridlines (instrument baseline feel)
     ctx.strokeStyle = this.gridColor || "rgba(255,255,255,0.06)";
@@ -72,8 +85,9 @@ export class Visualizer {
     const canRound = typeof ctx.roundRect === "function";
 
     for (let i = 0; i < n; i++) {
+      const x = i * (barW + gap) - this.panX;
+      if (x + barW < 0 || x > w) continue; // off-screen, skip
       const barH = Math.max(2, (arr[i] / maxVal) * usableH);
-      const x = i * (barW + gap);
       const y = h - barH;
       const state = highlights[i];
 

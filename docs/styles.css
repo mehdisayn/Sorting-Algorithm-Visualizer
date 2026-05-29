@@ -150,7 +150,37 @@ body::before {
   border-radius: var(--r-lg);
   overflow: hidden;
 }
-#canvas { display: block; width: 100%; height: 100%; }
+#canvas { display: block; width: 100%; height: 100%; cursor: zoom-in; }
+.canvas-wrap.expanded #canvas { cursor: grab; touch-action: none; }
+.canvas-wrap.grabbing #canvas { cursor: grabbing; }
+
+/* Fullscreen: cover the whole window, hide everything else */
+.canvas-wrap.fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 65;
+  border: none;
+  border-radius: 0;
+  background: var(--bg);
+}
+.fs-close { position: absolute; top: 14px; right: 14px; z-index: 2; }
+.fs-close[hidden] { display: none; }
+
+.zoom-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--panel) 90%, transparent);
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  padding: 6px 14px;
+  pointer-events: none;
+}
+.zoom-hint[hidden] { display: none; }
 
 /* ---------- Controls ---------- */
 .controls {
@@ -269,6 +299,18 @@ input[type="text"], input[type="number"] { min-width: 120px; }
 }
 .tips strong { display: block; font-size: 0.92rem; margin-bottom: 2px; }
 .tips p { margin: 0; color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; }
+.onboard-subhead {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-faint);
+  margin: 0 0 10px;
+}
+.shortcuts { width: 100%; border-collapse: collapse; margin: 0 0 22px; font-size: 0.85rem; }
+.shortcuts td { padding: 7px 0; border-bottom: 1px solid var(--hair); color: var(--text-muted); }
+.shortcuts tr:last-child td { border-bottom: none; }
+.shortcuts td:first-child { width: 130px; white-space: nowrap; }
 .onboard-actions { display: flex; justify-content: flex-end; }
 
 /* ---------- Custom values modal ---------- */
