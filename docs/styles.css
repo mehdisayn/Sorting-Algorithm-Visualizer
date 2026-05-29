@@ -10,7 +10,7 @@
   --hair-strong: rgba(255, 255, 255, 0.14);
   --text: #f1f3f7;
   --text-muted: #8b94a3;
-  --text-faint: #59616f;
+  --text-faint: #7a8494;
   --accent: #5b8cff;
   --accent-soft: rgba(91, 140, 255, 0.16);
   --accent-text: #ffffff;
@@ -38,7 +38,7 @@
   --hair-strong: rgba(10, 15, 30, 0.16);
   --text: #11141a;
   --text-muted: #5a6472;
-  --text-faint: #98a1b0;
+  --text-faint: #667085;
   --accent: #2f6bff;
   --accent-soft: rgba(47, 107, 255, 0.12);
   --accent-text: #ffffff;
@@ -89,7 +89,8 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 10px 16px;
+  flex-wrap: wrap;
 }
 .title {
   margin: 0;
@@ -103,12 +104,13 @@ body::before {
 .title::before {
   /* small accent tick, instrument flavor */
   content: "";
+  flex-shrink: 0;
   width: 9px; height: 9px;
   border-radius: 3px;
   background: var(--accent);
   box-shadow: 0 0 12px var(--accent);
 }
-.header-meta { display: flex; align-items: center; gap: 10px; }
+.header-meta { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
 .algo-name {
   font-family: var(--font-mono);
   font-size: 0.78rem;
