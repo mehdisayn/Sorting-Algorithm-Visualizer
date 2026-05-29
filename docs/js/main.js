@@ -15,6 +15,11 @@ const orderDesc = $("order-desc");
 const sizeSlider = $("size-slider");
 const sizeValue = $("size-value");
 const customInput = $("custom-input");
+const customBtn = $("custom-btn");
+const customModal = $("custom-modal");
+const customBackdrop = $("custom-backdrop");
+const customCancel = $("custom-cancel");
+const customApply = $("custom-apply");
 const uploadBtn = $("upload-btn");
 const fileInput = $("file-input");
 const fileChip = $("file-chip");
@@ -133,6 +138,8 @@ function updateButtons() {
   customInput.disabled = active;
   targetInput.disabled = active;
   randomizeBtn.disabled = active;
+  customBtn.disabled = active;
+  uploadBtn.disabled = active;
   orderAsc.disabled = active;
   orderDesc.disabled = active;
 
@@ -584,6 +591,7 @@ window.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
   if (isDrawerOpen()) closeDrawer();
   if (!exportMenu.hidden) closeExportMenu();
+  if (isCustomOpen()) closeCustomModal();
 });
 
 exportBtn.addEventListener("click", (e) => {
@@ -623,9 +631,45 @@ sizeSlider.addEventListener("input", () => {
   regenerate(Number(sizeSlider.value));
 });
 
-customInput.addEventListener("change", applyCustomValues);
+// Custom values modal
+function openCustomModal() {
+  if (isActive()) return;
+  customBackdrop.hidden = false;
+  customModal.hidden = false;
+  customInput.focus();
+  customInput.select();
+}
+function closeCustomModal() {
+  customModal.hidden = true;
+  customBackdrop.hidden = true;
+  customBtn.focus();
+}
+function isCustomOpen() {
+  return !customModal.hidden;
+}
+
+customBtn.addEventListener("click", openCustomModal);
+customCancel.addEventListener("click", closeCustomModal);
+customBackdrop.addEventListener("click", closeCustomModal);
+customApply.addEventListener("click", () => { if (applyCustomValues()) closeCustomModal(); });
+
 customInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") applyCustomValues();
+  if (e.key === " ") {
+    // auto-separate numbers with a comma instead of a space
+    e.preventDefault();
+    const s = customInput.selectionStart;
+    const en = customInput.selectionEnd;
+    const before = customInput.value.slice(0, s);
+    const after = customInput.value.slice(en);
+    if (before === "" || /[,\s]$/.test(before)) return; // no leading or doubled separators
+    const ins = ", ";
+    customInput.value = before + ins + after;
+    const pos = s + ins.length;
+    customInput.setSelectionRange(pos, pos);
+  } else if (e.key === "Enter") {
+    e.preventDefault();
+    if (applyCustomValues()) closeCustomModal();
+  }
 });
 
 uploadBtn.addEventListener("click", () => {
