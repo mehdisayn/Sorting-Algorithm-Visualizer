@@ -5,6 +5,7 @@ import { Visualizer } from "./visualizer.js";
 const $ = (id) => document.getElementById(id);
 const canvas = $("canvas");
 const algoSelect = $("algo-select");
+const distSelect = $("dist-select");
 const orderControl = $("order-control");
 const targetControl = $("target-control");
 const targetInput = $("target-input");
@@ -14,6 +15,8 @@ const sizeSlider = $("size-slider");
 const sizeValue = $("size-value");
 const customInput = $("custom-input");
 const randomizeBtn = $("randomize-btn");
+const stepBtn = $("step-btn");
+const pauseBtn = $("pause-btn");
 const runBtn = $("run-btn");
 const resetBtn = $("reset-btn");
 const themeToggle = $("theme-toggle");
@@ -21,6 +24,7 @@ const algoName = $("algo-name");
 const algoComplexity = $("algo-complexity");
 const modeLabel = $("mode-label");
 const statusMsg = $("status-msg");
+const counts = $("counts");
 const timeLabel = $("time-label");
 
 // ---------- State ----------
@@ -28,16 +32,49 @@ const state = {
   arr: [],
   algoId: "bubble",
   ascending: true,
+  gen: null,
   running: false,
+  paused: false,
+  finished: false,
   raf: null,
-  startTime: 0,
+  stepsPerFrame: 1,
+  stats: { comparisons: 0, writes: 0 },
+  searchTarget: null,
+  // timing across running segments only (excludes pauses / manual stepping)
+  elapsed: 0,
+  segStart: 0,
+  timing: false,
 };
 
 const viz = new Visualizer(canvas);
 
+const isActive = () => state.gen && !state.finished;
+
 // ---------- Helpers ----------
-function randomArray(n) {
-  return Array.from({ length: n }, () => Math.floor(Math.random() * 96) + 5);
+function randomArray(n, dist) {
+  const rnd = () => Math.floor(Math.random() * 96) + 5;
+  let a;
+  switch (dist) {
+    case "reversed":
+      a = Array.from({ length: n }, (_, i) => Math.round(5 + (95 * (n - 1 - i)) / Math.max(1, n - 1)));
+      break;
+    case "nearly":
+      a = Array.from({ length: n }, (_, i) => Math.round(5 + (95 * i) / Math.max(1, n - 1)));
+      for (let k = 0; k < Math.max(1, Math.floor(n * 0.05)); k++) {
+        const i = Math.floor(Math.random() * n);
+        const j = Math.floor(Math.random() * n);
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      break;
+    case "few": {
+      const pool = [15, 35, 55, 75, 95];
+      a = Array.from({ length: n }, () => pool[Math.floor(Math.random() * pool.length)]);
+      break;
+    }
+    default:
+      a = Array.from({ length: n }, rnd);
+  }
+  return a;
 }
 
 function setStatus(msg, isError = false) {
@@ -49,6 +86,10 @@ function fmtTime(ms) {
   if (ms < 1) return `${(ms * 1000).toFixed(0)} µs`;
   if (ms < 1000) return `${ms.toFixed(1)} ms`;
   return `${(ms / 1000).toFixed(2)} s`;
+}
+
+function updateCounts() {
+  counts.textContent = `cmp ${state.stats.comparisons} · wr ${state.stats.writes}`;
 }
 
 function currentAlgo() {
@@ -65,15 +106,22 @@ function syncAlgoMeta() {
   targetControl.hidden = !isSearch;
 }
 
-function setControlsDisabled(disabled) {
-  algoSelect.disabled = disabled;
-  sizeSlider.disabled = disabled;
-  customInput.disabled = disabled;
-  targetInput.disabled = disabled;
-  randomizeBtn.disabled = disabled;
-  orderAsc.disabled = disabled;
-  orderDesc.disabled = disabled;
-  runBtn.disabled = disabled;
+function updateButtons() {
+  const active = isActive();
+  // config controls locked whenever a run is in progress (running or paused)
+  algoSelect.disabled = active;
+  distSelect.disabled = active;
+  sizeSlider.disabled = active;
+  customInput.disabled = active;
+  targetInput.disabled = active;
+  randomizeBtn.disabled = active;
+  orderAsc.disabled = active;
+  orderDesc.disabled = active;
+
+  runBtn.disabled = active;                       // Run only starts a fresh run
+  pauseBtn.disabled = !active;                    // Pause/Resume only while active
+  pauseBtn.textContent = state.paused ? "Resume" : "Pause";
+  stepBtn.disabled = state.running && !state.paused; // Step when idle or paused, not while looping
 }
 
 function render(highlights = {}) {
@@ -82,14 +130,24 @@ function render(highlights = {}) {
 
 // ---------- Array generation / input ----------
 function regenerate(n = Number(sizeSlider.value)) {
-  stop();
-  state.arr = randomArray(n);
+  cancelLoop();
+  state.gen = null;
+  state.running = false;
+  state.paused = false;
+  state.finished = false;
+  state.elapsed = 0;
+  state.timing = false;
+  state.stats = { comparisons: 0, writes: 0 };
+  state.arr = randomArray(n, distSelect.value);
   timeLabel.textContent = "";
+  updateCounts();
   setStatus("Ready");
+  updateButtons();
   render();
 }
 
 function applyCustomValues() {
+  if (isActive()) return;
   const raw = customInput.value.trim();
   if (!raw) return;
   const parts = raw.split(",").map((p) => p.trim()).filter((p) => p.length);
@@ -102,75 +160,139 @@ function applyCustomValues() {
     setStatus("Enter at least 2 values.", true);
     return;
   }
-  stop();
+  cancelLoop();
+  state.gen = null;
+  state.finished = false;
+  state.elapsed = 0;
+  state.stats = { comparisons: 0, writes: 0 };
   state.arr = nums;
   sizeSlider.value = String(Math.min(150, Math.max(10, nums.length)));
   sizeValue.textContent = String(nums.length);
   timeLabel.textContent = "";
+  updateCounts();
   setStatus(`Loaded ${nums.length} custom values`);
+  updateButtons();
   render();
 }
 
-// ---------- Run / animation ----------
-function run() {
-  if (state.running || state.arr.length < 2) return;
+// ---------- Generator lifecycle ----------
+function buildGenerator() {
   const algo = currentAlgo();
-  let gen;
-
+  if (state.arr.length < 2) {
+    setStatus("Need at least 2 elements.", true);
+    return false;
+  }
   if (algo.type === "search") {
     const target = Number(targetInput.value);
     if (targetInput.value.trim() === "" || !Number.isFinite(target)) {
       setStatus("Enter a numeric target to search.", true);
-      return;
+      return false;
     }
     if (state.algoId === "binary") {
       state.arr.sort((a, b) => a - b);
       render();
     }
-    gen = algo.fn(state.arr, target);
+    state.searchTarget = target;
+    state.stats = { comparisons: 0, writes: 0 };
+    state.gen = algo.fn(state.arr, target, state.stats);
     setStatus(`Searching for ${target}...`);
   } else {
-    gen = algo.fn(state.arr, state.ascending);
+    state.stats = { comparisons: 0, writes: 0 };
+    state.gen = algo.fn(state.arr, state.ascending, state.stats);
     setStatus("Running...");
   }
+  state.finished = false;
+  state.elapsed = 0;
+  state.stepsPerFrame = Math.max(1, Math.ceil(state.arr.length / 40));
+  updateCounts();
+  return true;
+}
 
+function startLoop() {
   state.running = true;
-  state.startTime = performance.now();
-  setControlsDisabled(true);
-  resetBtn.disabled = false;
-
-  const stepsPerFrame = Math.max(1, Math.ceil(state.arr.length / 40));
-
+  state.paused = false;
+  state.segStart = performance.now();
+  state.timing = true;
+  updateButtons();
   const frame = () => {
-    if (!state.running) return;
+    if (!state.running || state.paused) return;
     let res;
-    for (let s = 0; s < stepsPerFrame; s++) {
-      res = gen.next();
+    for (let s = 0; s < state.stepsPerFrame; s++) {
+      res = state.gen.next();
       if (res.done) break;
     }
-    if (res.done) {
-      finish(res.value);
-      return;
-    }
+    updateCounts();
+    if (res.done) { finish(res.value); return; }
     render(res.value.highlights);
     state.raf = requestAnimationFrame(frame);
   };
   state.raf = requestAnimationFrame(frame);
 }
 
-function finish(returnValue) {
-  state.running = false;
+function cancelLoop() {
   if (state.raf) cancelAnimationFrame(state.raf);
-  const dur = performance.now() - state.startTime;
+  state.raf = null;
+}
+
+function accumulateTime() {
+  if (state.timing) {
+    state.elapsed += performance.now() - state.segStart;
+    state.timing = false;
+  }
+}
+
+function run() {
+  if (isActive()) return;        // a run is already in progress
+  if (!buildGenerator()) return;
+  startLoop();
+}
+
+function pauseToggle() {
+  if (!isActive()) return;
+  if (!state.paused) {
+    state.paused = true;
+    state.running = false;
+    cancelLoop();
+    accumulateTime();
+    setStatus("Paused");
+  } else {
+    setStatus(currentAlgo().type === "search" ? "Searching..." : "Running...");
+    startLoop();
+  }
+  updateButtons();
+}
+
+function stepOnce() {
+  if (state.finished) return;
+  if (state.running && !state.paused) return;
+  if (!state.gen) {
+    if (!buildGenerator()) return;
+    state.paused = true;
+    state.running = false;
+    setStatus("Paused");
+  }
+  const res = state.gen.next();
+  updateCounts();
+  if (res.done) { finish(res.value); return; }
+  render(res.value.highlights);
+  updateButtons();
+}
+
+function finish(returnValue) {
+  accumulateTime();
+  cancelLoop();
+  state.running = false;
+  state.paused = false;
+  state.finished = true;
   const algo = currentAlgo();
 
   if (algo.type === "search") {
     if (returnValue >= 0) {
       render({ [returnValue]: "sorted" });
-      setStatus(`Found ${targetInput.value} at index ${returnValue}`);
+      setStatus(`Found ${state.searchTarget} at index ${returnValue}`);
     } else {
       render();
-      setStatus(`${targetInput.value} not found`);
+      setStatus(`${state.searchTarget} not found`);
     }
   } else {
     const hl = {};
@@ -179,28 +301,28 @@ function finish(returnValue) {
     setStatus(`Sorted ${state.ascending ? "ascending" : "descending"}`);
   }
 
-  timeLabel.textContent = `Time: ${fmtTime(dur)}`;
-  setControlsDisabled(false);
-}
-
-function stop() {
-  state.running = false;
-  if (state.raf) cancelAnimationFrame(state.raf);
-  setControlsDisabled(false);
+  timeLabel.textContent = `time ${fmtTime(state.elapsed)}`;
+  state.gen = null;
+  updateButtons();
 }
 
 // ---------- Events ----------
 algoSelect.addEventListener("change", () => {
-  if (state.running) return;
+  if (isActive()) return;
   state.algoId = algoSelect.value;
   syncAlgoMeta();
-  render();
+  regenerate(Number(sizeSlider.value));
+});
+
+distSelect.addEventListener("change", () => {
+  if (isActive()) return;
+  regenerate(Number(sizeSlider.value));
 });
 
 orderAsc.addEventListener("click", () => setOrder(true));
 orderDesc.addEventListener("click", () => setOrder(false));
 function setOrder(asc) {
-  if (state.running) return;
+  if (isActive()) return;
   state.ascending = asc;
   orderAsc.classList.toggle("active", asc);
   orderDesc.classList.toggle("active", !asc);
@@ -209,7 +331,7 @@ function setOrder(asc) {
 }
 
 sizeSlider.addEventListener("input", () => {
-  if (state.running) return;
+  if (isActive()) return;
   sizeValue.textContent = sizeSlider.value;
   regenerate(Number(sizeSlider.value));
 });
@@ -221,6 +343,8 @@ customInput.addEventListener("keydown", (e) => {
 
 randomizeBtn.addEventListener("click", () => regenerate(Number(sizeSlider.value)));
 runBtn.addEventListener("click", run);
+pauseBtn.addEventListener("click", pauseToggle);
+stepBtn.addEventListener("click", stepOnce);
 resetBtn.addEventListener("click", () => regenerate(Number(sizeSlider.value)));
 
 themeToggle.addEventListener("click", () => {

@@ -259,6 +259,14 @@ input:focus-visible, select:focus-visible {
 .status-msg { color: var(--text-muted); }
 .status-msg.error { color: var(--bar-swap); }
 #time-label { margin-left: auto; color: var(--text-muted); }
+.credit { color: var(--text-faint); }
+.credit a {
+  color: var(--text-muted);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 140ms ease, border-color 140ms ease;
+}
+.credit a:hover { color: var(--accent); border-bottom-color: var(--accent); }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 768px) {

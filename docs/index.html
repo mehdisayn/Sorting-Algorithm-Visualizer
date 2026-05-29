@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sorting Algorithm Visualizer</title>
+  <meta name="description" content="Interactive visualizer for sorting and searching algorithms: bubble, merge, quick, heap, radix and more, animated step by step." />
+  <meta name="theme-color" content="#08090c" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2308090c'/%3E%3Crect x='6' y='18' width='4' height='8' rx='1' fill='%235b8cff'/%3E%3Crect x='12' y='12' width='4' height='14' rx='1' fill='%232fe39b'/%3E%3Crect x='18' y='8' width='4' height='18' rx='1' fill='%23ffb020'/%3E%3Crect x='24' y='14' width='4' height='12' rx='1' fill='%23ff5d6c'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -59,6 +62,18 @@
         <input id="target-input" type="number" inputmode="numeric" placeholder="e.g. 42" />
       </div>
 
+      <div class="control">
+        <label for="dist-select">Data</label>
+        <div class="select-wrap">
+          <select id="dist-select">
+            <option value="random">Random</option>
+            <option value="nearly">Nearly sorted</option>
+            <option value="reversed">Reversed</option>
+            <option value="few">Few unique</option>
+          </select>
+        </div>
+      </div>
+
       <div class="control control-grow">
         <label for="size-slider">Size <span id="size-value" class="mono">50</span></label>
         <input id="size-slider" type="range" min="10" max="150" value="50" />
@@ -71,6 +86,8 @@
 
       <div class="control-actions">
         <button id="randomize-btn" type="button" class="btn btn-secondary">Randomize</button>
+        <button id="step-btn" type="button" class="btn btn-secondary">Step</button>
+        <button id="pause-btn" type="button" class="btn btn-secondary" disabled>Pause</button>
         <button id="run-btn" type="button" class="btn btn-primary">Run</button>
         <button id="reset-btn" type="button" class="btn btn-ghost">Reset</button>
       </div>
@@ -79,7 +96,14 @@
     <footer class="status">
       <span id="mode-label" class="mono">Mode: Sort</span>
       <span id="status-msg" class="status-msg" role="status" aria-live="polite">Ready</span>
+      <span id="counts" class="mono">cmp 0 · wr 0</span>
       <span id="time-label" class="mono"></span>
+      <span class="credit">
+        Built by
+        <a href="https://syedmehedihussain.codes" target="_blank" rel="noopener noreferrer">Syed Mehedi Hussain</a>
+        ·
+        <a href="https://ridwanhasankhandakar.github.io/rrhin/" target="_blank" rel="noopener noreferrer">Ridwan Hasan Khandakar</a>
+      </span>
     </footer>
   </div>
 
