@@ -14,8 +14,9 @@
     <header class="header">
       <h1 class="title">Sorting Visualizer</h1>
       <div class="header-meta">
-        <span id="algo-name" class="algo-name">Bubble Sort</span>
+        <button id="algo-name" class="algo-name" type="button" title="View how this algorithm works">Bubble Sort</button>
         <span id="algo-complexity" class="complexity">O(n²)</span>
+        <button id="info-btn" class="icon-btn" type="button" aria-label="Algorithm details">?</button>
         <button id="theme-toggle" class="icon-btn" type="button" aria-label="Toggle theme">◐</button>
       </div>
     </header>
@@ -106,6 +107,15 @@
       </span>
     </footer>
   </div>
+
+  <div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
+  <aside id="drawer" class="drawer" aria-hidden="true" aria-labelledby="drawer-title" role="dialog">
+    <div class="drawer-head">
+      <h2 id="drawer-title" class="drawer-title">Bubble Sort</h2>
+      <button id="drawer-close" class="icon-btn" type="button" aria-label="Close details">✕</button>
+    </div>
+    <div id="drawer-body" class="drawer-body"></div>
+  </aside>
 
   <script type="module" src="js/main.js"></script>
 </body>

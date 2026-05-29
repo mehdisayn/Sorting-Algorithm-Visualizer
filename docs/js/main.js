@@ -1,5 +1,6 @@
 import { ALGORITHMS } from "./algorithms.js";
 import { Visualizer } from "./visualizer.js";
+import { DESCRIPTIONS, LEGEND } from "./descriptions.js";
 
 // ---------- Elements ----------
 const $ = (id) => document.getElementById(id);
@@ -22,6 +23,12 @@ const resetBtn = $("reset-btn");
 const themeToggle = $("theme-toggle");
 const algoName = $("algo-name");
 const algoComplexity = $("algo-complexity");
+const infoBtn = $("info-btn");
+const drawer = $("drawer");
+const drawerBackdrop = $("drawer-backdrop");
+const drawerClose = $("drawer-close");
+const drawerTitle = $("drawer-title");
+const drawerBody = $("drawer-body");
 const modeLabel = $("mode-label");
 const statusMsg = $("status-msg");
 const counts = $("counts");
@@ -126,6 +133,77 @@ function updateButtons() {
 
 function render(highlights = {}) {
   viz.render(state.arr, highlights);
+}
+
+// ---------- Info drawer ----------
+const COLOR_VARS = {
+  compare: "--bar-compare",
+  swap: "--bar-swap",
+  sorted: "--bar-sorted",
+  target: "--bar-target",
+};
+
+function yesNo(v) {
+  if (v === null || v === undefined) return "n/a";
+  return v ? "Yes" : "No";
+}
+
+function buildDrawerBody(d) {
+  const legendRows = LEGEND.map(
+    (l) =>
+      `<div class="legend-item"><span class="legend-swatch" style="background:var(${COLOR_VARS[l.state]})"></span>${l.label}</div>`
+  ).join("");
+
+  return `
+    <p class="summary">${d.summary}</p>
+    <h3>How it works</h3>
+    <p>${d.how}</p>
+    <h3>Complexity</h3>
+    <table class="cx-table">
+      <tr><td>Time (best)</td><td>${d.time.best}</td></tr>
+      <tr><td>Time (average)</td><td>${d.time.average}</td></tr>
+      <tr><td>Time (worst)</td><td>${d.time.worst}</td></tr>
+      <tr><td>Space</td><td>${d.space}</td></tr>
+    </table>
+    <h3>Properties</h3>
+    <div class="props">
+      <span class="prop">${d.kind}</span>
+      <span class="prop">Stable: ${yesNo(d.stable)}</span>
+      <span class="prop">In-place: ${yesNo(d.inPlace)}</span>
+    </div>
+    <h3>When to use</h3>
+    <p>${d.use}</p>
+    <h3>Color legend</h3>
+    <div class="legend">${legendRows}</div>
+  `;
+}
+
+function refreshDrawerContent() {
+  const algo = currentAlgo();
+  const d = DESCRIPTIONS[state.algoId];
+  drawerTitle.textContent = algo.name;
+  drawerBody.innerHTML = buildDrawerBody(d);
+}
+
+function openDrawer() {
+  refreshDrawerContent();
+  drawerBackdrop.hidden = false;
+  requestAnimationFrame(() => drawerBackdrop.classList.add("show"));
+  drawer.classList.add("open");
+  drawer.setAttribute("aria-hidden", "false");
+  drawerClose.focus();
+}
+
+function closeDrawer() {
+  drawer.classList.remove("open");
+  drawer.setAttribute("aria-hidden", "true");
+  drawerBackdrop.classList.remove("show");
+  setTimeout(() => { drawerBackdrop.hidden = true; }, 220);
+  infoBtn.focus();
+}
+
+function isDrawerOpen() {
+  return drawer.classList.contains("open");
 }
 
 // ---------- Array generation / input ----------
@@ -311,7 +389,16 @@ algoSelect.addEventListener("change", () => {
   if (isActive()) return;
   state.algoId = algoSelect.value;
   syncAlgoMeta();
+  if (isDrawerOpen()) refreshDrawerContent();
   regenerate(Number(sizeSlider.value));
+});
+
+infoBtn.addEventListener("click", openDrawer);
+algoName.addEventListener("click", openDrawer);
+drawerClose.addEventListener("click", closeDrawer);
+drawerBackdrop.addEventListener("click", closeDrawer);
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && isDrawerOpen()) closeDrawer();
 });
 
 distSelect.addEventListener("change", () => {
