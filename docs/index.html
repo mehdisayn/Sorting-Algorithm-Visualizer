@@ -17,6 +17,13 @@
         <button id="algo-name" class="algo-name" type="button" title="View how this algorithm works">Bubble Sort</button>
         <span id="algo-complexity" class="complexity">O(n²)</span>
         <button id="info-btn" class="icon-btn" type="button" aria-label="Algorithm details">?</button>
+        <div class="export">
+          <button id="export-btn" class="icon-btn" type="button" aria-label="Download results" aria-haspopup="true" disabled>⭳</button>
+          <div id="export-menu" class="export-menu" role="menu" hidden>
+            <button type="button" data-fmt="txt" role="menuitem">Run report (.txt)</button>
+            <button type="button" data-fmt="png" role="menuitem">Visualization (.png)</button>
+          </div>
+        </div>
         <button id="theme-toggle" class="icon-btn" type="button" aria-label="Toggle theme">◐</button>
       </div>
     </header>
@@ -82,7 +89,11 @@
 
       <div class="control control-grow">
         <label for="custom-input">Custom values</label>
-        <input id="custom-input" type="text" placeholder="e.g. 5, 3, 8, 1, 9" />
+        <div class="input-row">
+          <input id="custom-input" type="text" placeholder="e.g. 5, 3, 8, 1, 9" />
+          <button id="upload-btn" type="button" class="btn btn-secondary btn-sm" title="Upload a .txt, .csv or .json file of numbers">Upload</button>
+          <input id="file-input" type="file" accept=".txt,.csv,.json,text/plain,text/csv,application/json" hidden />
+        </div>
       </div>
 
       <div class="control-actions">

@@ -15,6 +15,8 @@ const orderDesc = $("order-desc");
 const sizeSlider = $("size-slider");
 const sizeValue = $("size-value");
 const customInput = $("custom-input");
+const uploadBtn = $("upload-btn");
+const fileInput = $("file-input");
 const randomizeBtn = $("randomize-btn");
 const stepBtn = $("step-btn");
 const pauseBtn = $("pause-btn");
@@ -24,6 +26,8 @@ const themeToggle = $("theme-toggle");
 const algoName = $("algo-name");
 const algoComplexity = $("algo-complexity");
 const infoBtn = $("info-btn");
+const exportBtn = $("export-btn");
+const exportMenu = $("export-menu");
 const drawer = $("drawer");
 const drawerBackdrop = $("drawer-backdrop");
 const drawerClose = $("drawer-close");
@@ -47,6 +51,9 @@ const state = {
   stepsPerFrame: 1,
   stats: { comparisons: 0, writes: 0 },
   searchTarget: null,
+  dataSource: "random",
+  inputSnapshot: [],
+  lastRun: null,
   // timing across running segments only (excludes pauses / manual stepping)
   elapsed: 0,
   segStart: 0,
@@ -148,6 +155,13 @@ function yesNo(v) {
   return v ? "Yes" : "No";
 }
 
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 function buildDrawerBody(d) {
   const legendRows = LEGEND.map(
     (l) =>
@@ -173,6 +187,8 @@ function buildDrawerBody(d) {
     </div>
     <h3>When to use</h3>
     <p>${d.use}</p>
+    <h3>Pseudocode</h3>
+    <pre class="pseudo">${escapeHtml(d.pseudo)}</pre>
     <h3>Color legend</h3>
     <div class="legend">${legendRows}</div>
   `;
@@ -206,6 +222,113 @@ function isDrawerOpen() {
   return drawer.classList.contains("open");
 }
 
+// ---------- Export / download ----------
+function updateExport() {
+  exportBtn.disabled = !state.lastRun;
+  if (!state.lastRun) closeExportMenu();
+}
+
+function downloadBlob(filename, blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function runSlug() {
+  const r = state.lastRun;
+  const ts = r.finishedAt.toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  return `sorting-${r.algoId}-n${r.size}-${ts}`;
+}
+
+function buildReport() {
+  const r = state.lastRun;
+  const lines = [];
+  lines.push("Sorting Algorithm Visualizer - Run Report");
+  lines.push("https://mehdisayn.github.io/Sorting-Algorithm-Visualizer/");
+  lines.push(`Generated: ${r.finishedAt.toString()}`);
+  lines.push("");
+  lines.push(`Algorithm   : ${r.algorithm}`);
+  lines.push(`Category    : ${r.type === "sort" ? "Sort" : "Search"}`);
+  if (r.type === "sort") lines.push(`Order       : ${r.order}`);
+  if (r.type === "search") {
+    lines.push(`Target      : ${r.target}`);
+    lines.push(`Result      : ${r.result >= 0 ? `found at index ${r.result}` : "not found"}`);
+  }
+  lines.push(`Data source : ${r.dataSource}`);
+  lines.push(`Input size  : ${r.size}`);
+  lines.push(`Complexity  : ${r.complexity} (headline)`);
+  lines.push("");
+  lines.push("Results");
+  lines.push("-------");
+  lines.push(`Comparisons : ${r.comparisons}`);
+  lines.push(`Writes/swaps: ${r.writes}`);
+  lines.push(`Time        : ${fmtTime(r.timeMs)}`);
+  lines.push("");
+  lines.push("Input array");
+  lines.push("-----------");
+  lines.push(`[${r.input.join(", ")}]`);
+  lines.push("");
+  lines.push(r.type === "search" ? "Array (search order)" : "Output array");
+  lines.push("------------");
+  lines.push(`[${r.output.join(", ")}]`);
+  lines.push("");
+  lines.push("Web app by Syed Mehedi Hussain. Original by Ridwan Hasan Khandakar.");
+  return lines.join("\n");
+}
+
+function exportTXT() {
+  const blob = new Blob([buildReport()], { type: "text/plain;charset=utf-8" });
+  downloadBlob(`${runSlug()}.txt`, blob);
+}
+
+function exportPNG() {
+  const r = state.lastRun;
+  const dpr = window.devicePixelRatio || 1;
+  const headH = 56;
+  const w = viz.cssWidth;
+  const h = viz.cssHeight;
+  const off = document.createElement("canvas");
+  off.width = Math.round(w * dpr);
+  off.height = Math.round((h + headH) * dpr);
+  const c = off.getContext("2d");
+  c.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const cs = getComputedStyle(document.documentElement);
+  const v = (name, fallback) => (cs.getPropertyValue(name).trim() || fallback);
+
+  c.fillStyle = v("--panel", "#0e0f13");
+  c.fillRect(0, 0, w, h + headH);
+
+  c.textAlign = "left";
+  c.fillStyle = v("--text", "#fff");
+  c.font = `600 17px ${v("--font-ui", "sans-serif")}`;
+  c.fillText(r.algorithm, 16, 26);
+
+  c.fillStyle = v("--text-muted", "#888");
+  c.font = `12px ${v("--font-mono", "monospace")}`;
+  const meta =
+    r.type === "sort"
+      ? `${r.order} · n=${r.size} · ${r.dataSource} · cmp ${r.comparisons} · wr ${r.writes} · ${fmtTime(r.timeMs)}`
+      : `target ${r.target} · ${r.result >= 0 ? "index " + r.result : "not found"} · cmp ${r.comparisons}`;
+  c.fillText(meta, 16, 45);
+
+  c.drawImage(canvas, 0, headH, w, h);
+
+  off.toBlob((blob) => { if (blob) downloadBlob(`${runSlug()}.png`, blob); }, "image/png");
+}
+
+function toggleExportMenu() {
+  if (exportBtn.disabled) return;
+  exportMenu.hidden ? openExportMenu() : closeExportMenu();
+}
+function openExportMenu() { exportMenu.hidden = false; }
+function closeExportMenu() { exportMenu.hidden = true; }
+
 // ---------- Array generation / input ----------
 function regenerate(n = Number(sizeSlider.value)) {
   cancelLoop();
@@ -217,10 +340,13 @@ function regenerate(n = Number(sizeSlider.value)) {
   state.timing = false;
   state.stats = { comparisons: 0, writes: 0 };
   state.arr = randomArray(n, distSelect.value);
+  state.dataSource = distSelect.options[distSelect.selectedIndex].text;
+  state.lastRun = null;
   timeLabel.textContent = "";
   updateCounts();
   setStatus("Ready");
   updateButtons();
+  updateExport();
   render();
 }
 
@@ -244,12 +370,15 @@ function applyCustomValues() {
   state.elapsed = 0;
   state.stats = { comparisons: 0, writes: 0 };
   state.arr = nums;
+  state.dataSource = "Custom";
+  state.lastRun = null;
   sizeSlider.value = String(Math.min(150, Math.max(10, nums.length)));
   sizeValue.textContent = String(nums.length);
   timeLabel.textContent = "";
   updateCounts();
   setStatus(`Loaded ${nums.length} custom values`);
   updateButtons();
+  updateExport();
   render();
 }
 
@@ -260,6 +389,7 @@ function buildGenerator() {
     setStatus("Need at least 2 elements.", true);
     return false;
   }
+  state.inputSnapshot = state.arr.slice();
   if (algo.type === "search") {
     const target = Number(targetInput.value);
     if (targetInput.value.trim() === "" || !Number.isFinite(target)) {
@@ -380,8 +510,28 @@ function finish(returnValue) {
   }
 
   timeLabel.textContent = `time ${fmtTime(state.elapsed)}`;
+
+  state.lastRun = {
+    algoId: state.algoId,
+    algorithm: algo.name,
+    type: algo.type,
+    complexity: algo.complexity,
+    order: algo.type === "sort" ? (state.ascending ? "Ascending" : "Descending") : null,
+    target: algo.type === "search" ? state.searchTarget : null,
+    result: algo.type === "search" ? returnValue : null,
+    dataSource: state.dataSource,
+    size: state.arr.length,
+    input: state.inputSnapshot.slice(),
+    output: state.arr.slice(),
+    comparisons: state.stats.comparisons,
+    writes: state.stats.writes,
+    timeMs: state.elapsed,
+    finishedAt: new Date(),
+  };
+
   state.gen = null;
   updateButtons();
+  updateExport();
 }
 
 // ---------- Events ----------
@@ -398,7 +548,24 @@ algoName.addEventListener("click", openDrawer);
 drawerClose.addEventListener("click", closeDrawer);
 drawerBackdrop.addEventListener("click", closeDrawer);
 window.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && isDrawerOpen()) closeDrawer();
+  if (e.key !== "Escape") return;
+  if (isDrawerOpen()) closeDrawer();
+  if (!exportMenu.hidden) closeExportMenu();
+});
+
+exportBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  toggleExportMenu();
+});
+exportMenu.addEventListener("click", (e) => {
+  const fmt = e.target.dataset.fmt;
+  if (!fmt) return;
+  if (fmt === "txt") exportTXT();
+  else if (fmt === "png") exportPNG();
+  closeExportMenu();
+});
+document.addEventListener("click", (e) => {
+  if (!exportMenu.hidden && !e.target.closest(".export")) closeExportMenu();
 });
 
 distSelect.addEventListener("change", () => {
