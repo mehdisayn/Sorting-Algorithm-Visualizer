@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sorting Algorithm Visualizer</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1 class="title">Sorting Visualizer</h1>
+      <div class="header-meta">
+        <span id="algo-name" class="algo-name">Bubble Sort</span>
+        <span id="algo-complexity" class="complexity">O(n²)</span>
+        <button id="theme-toggle" class="icon-btn" type="button" aria-label="Toggle theme">◐</button>
+      </div>
+    </header>
+
+    <main class="canvas-wrap">
+      <canvas id="canvas"></canvas>
+    </main>
+
+    <section class="controls" aria-label="Controls">
+      <div class="control">
+        <label for="algo-select">Algorithm</label>
+        <div class="select-wrap">
+          <select id="algo-select">
+            <optgroup label="Sorts">
+              <option value="bubble">Bubble Sort</option>
+              <option value="insertion">Insertion Sort</option>
+              <option value="selection">Selection Sort</option>
+              <option value="merge">Merge Sort</option>
+              <option value="quick">Quick Sort</option>
+              <option value="heap">Heap Sort</option>
+              <option value="bucket">Bucket Sort</option>
+              <option value="radix">Radix Sort</option>
+              <option value="tim">Tim Sort</option>
+              <option value="intro">Intro Sort</option>
+            </optgroup>
+            <optgroup label="Search">
+              <option value="linear">Linear Search</option>
+              <option value="binary">Binary Search</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+
+      <div class="control" id="order-control">
+        <label>Order</label>
+        <div class="segmented" role="group" aria-label="Sort order">
+          <button id="order-asc" type="button" class="seg active" aria-pressed="true">Asc</button>
+          <button id="order-desc" type="button" class="seg" aria-pressed="false">Desc</button>
+        </div>
+      </div>
+
+      <div class="control" id="target-control" hidden>
+        <label for="target-input">Target</label>
+        <input id="target-input" type="number" inputmode="numeric" placeholder="e.g. 42" />
+      </div>
+
+      <div class="control control-grow">
+        <label for="size-slider">Size <span id="size-value" class="mono">50</span></label>
+        <input id="size-slider" type="range" min="10" max="150" value="50" />
+      </div>
+
+      <div class="control control-grow">
+        <label for="custom-input">Custom values</label>
+        <input id="custom-input" type="text" placeholder="e.g. 5, 3, 8, 1, 9" />
+      </div>
+
+      <div class="control-actions">
+        <button id="randomize-btn" type="button" class="btn btn-secondary">Randomize</button>
+        <button id="run-btn" type="button" class="btn btn-primary">Run</button>
+        <button id="reset-btn" type="button" class="btn btn-ghost">Reset</button>
+      </div>
+    </section>
+
+    <footer class="status">
+      <span id="mode-label" class="mono">Mode: Sort</span>
+      <span id="status-msg" class="status-msg" role="status" aria-live="polite">Ready</span>
+      <span id="time-label" class="mono"></span>
+    </footer>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

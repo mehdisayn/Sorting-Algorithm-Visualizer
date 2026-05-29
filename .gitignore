@@ -1,0 +1,18 @@
+# Documentation (kept local, not tracked)
+doc.md
+plan.md
+design.md
+CLAUDE.md
+
+# Python virtual environment
+venv/
+
+# Python caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+*.swp
