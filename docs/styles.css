@@ -141,6 +141,7 @@ body::before {
   transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
 }
 .icon-btn:hover { color: var(--text); border-color: var(--hair-strong); background: var(--elev); }
+.sound-toggle.on { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, var(--hair)); }
 
 /* ---------- Canvas ---------- */
 .canvas-wrap {

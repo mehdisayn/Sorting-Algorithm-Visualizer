@@ -19,6 +19,7 @@
         <span id="algo-complexity" class="complexity">O(n²)</span>
         <button id="info-btn" class="icon-btn" type="button" aria-label="Algorithm details">?</button>
         <button id="help-btn" class="icon-btn" type="button" aria-label="Help and keyboard shortcuts">⌨</button>
+        <button id="sound-toggle" class="icon-btn sound-toggle" type="button" aria-label="Toggle sound" aria-pressed="false">♪</button>
         <div class="export">
           <button id="export-btn" class="icon-btn" type="button" aria-label="Download results" aria-haspopup="true" disabled>⭳</button>
           <div id="export-menu" class="export-menu" role="menu" hidden>
@@ -158,6 +159,10 @@
           <div><strong>How it works</strong><p>Click the algorithm name or the ? button for the idea, complexity, and pseudocode.</p></div>
         </li>
         <li>
+          <span class="tip-key">Hear</span>
+          <div><strong>Sound on by default</strong><p>Each step plays a tone pitched to its value. Toggle with the ♪ button or M.</p></div>
+        </li>
+        <li>
           <span class="tip-key">Save</span>
           <div><strong>Export results</strong><p>Download a run report (.txt) or a visualization (.png) after a run.</p></div>
         </li>
@@ -169,6 +174,7 @@
         <tr><td><kbd>R</kbd></td><td>Reset (new array)</td></tr>
         <tr><td><kbd>A</kbd> / <kbd>D</kbd></td><td>Sort ascending / descending</td></tr>
         <tr><td><kbd>T</kbd></td><td>Toggle light / dark theme</td></tr>
+        <tr><td><kbd>M</kbd></td><td>Mute / unmute sound</td></tr>
         <tr><td><kbd>?</kbd></td><td>Open this help</td></tr>
         <tr><td><kbd>Esc</kbd></td><td>Close dialogs</td></tr>
       </table>

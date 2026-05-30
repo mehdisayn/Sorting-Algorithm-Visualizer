@@ -1,6 +1,7 @@
 import { ALGORITHMS } from "./algorithms.js";
 import { Visualizer } from "./visualizer.js";
 import { DESCRIPTIONS, LEGEND } from "./descriptions.js";
+import { SoundPlayer } from "./sound.js";
 
 // ---------- Elements ----------
 const $ = (id) => document.getElementById(id);
@@ -34,6 +35,7 @@ const resetBtn = $("reset-btn");
 const onboard = $("onboard");
 const onboardStart = $("onboard-start");
 const helpBtn = $("help-btn");
+const soundToggle = $("sound-toggle");
 const themeToggle = $("theme-toggle");
 const algoName = $("algo-name");
 const algoComplexity = $("algo-complexity");
@@ -67,6 +69,7 @@ const state = {
   inputSnapshot: [],
   lastRun: null,
   lastHighlights: {},
+  runMax: 1,
   // timing across running segments only (excludes pauses / manual stepping)
   elapsed: 0,
   segStart: 0,
@@ -74,6 +77,7 @@ const state = {
 };
 
 const viz = new Visualizer(canvas);
+const sound = new SoundPlayer();
 
 const isActive = () => state.gen && !state.finished;
 
@@ -160,6 +164,36 @@ function render(highlights = {}) {
 
 function renderCurrent() {
   viz.render(state.arr, state.lastHighlights || {});
+}
+
+// ---------- Sound ----------
+const SOUND_KEY = "sav-sound";
+
+function updateSoundBtn() {
+  soundToggle.classList.toggle("on", sound.enabled);
+  soundToggle.setAttribute("aria-pressed", String(sound.enabled));
+  soundToggle.title = sound.enabled ? "Sound on (M)" : "Sound off (M)";
+}
+
+function initSound() {
+  let on = true; // on by default
+  try { const v = localStorage.getItem(SOUND_KEY); if (v !== null) on = v === "1"; } catch (e) {}
+  sound.enabled = on; // don't create the context until a gesture
+  updateSoundBtn();
+}
+
+function toggleSound() {
+  sound.setEnabled(!sound.enabled); // resumes the audio context within this gesture
+  try { localStorage.setItem(SOUND_KEY, sound.enabled ? "1" : "0"); } catch (e) {}
+  updateSoundBtn();
+}
+
+function playStepSound(highlights) {
+  if (!sound.enabled) return;
+  const keys = Object.keys(highlights);
+  if (!keys.length) return;
+  const idx = Number(keys[keys.length - 1]);
+  sound.note(state.arr[idx], state.runMax);
 }
 
 // ---------- Canvas fullscreen + pan ----------
@@ -529,7 +563,9 @@ function buildGenerator() {
   }
   state.finished = false;
   state.elapsed = 0;
+  state.runMax = Math.max(...state.arr, 1);
   state.stepsPerFrame = Math.max(1, Math.ceil(state.arr.length / 40));
+  sound.resume(); // ensure audio is live (called within the Run gesture)
   updateCounts();
   return true;
 }
@@ -550,6 +586,7 @@ function startLoop() {
     updateCounts();
     if (res.done) { finish(res.value); return; }
     render(res.value.highlights);
+    playStepSound(res.value.highlights);
     state.raf = requestAnimationFrame(frame);
   };
   state.raf = requestAnimationFrame(frame);
@@ -601,6 +638,7 @@ function stepOnce() {
   updateCounts();
   if (res.done) { finish(res.value); return; }
   render(res.value.highlights);
+  playStepSound(res.value.highlights);
   updateButtons();
 }
 
@@ -628,6 +666,7 @@ function finish(returnValue) {
   }
 
   timeLabel.textContent = `time ${fmtTime(state.elapsed)}`;
+  sound.complete();
 
   state.lastRun = {
     algoId: state.algoId,
@@ -722,6 +761,9 @@ window.addEventListener("keydown", (e) => {
       break;
     case "t": case "T":
       toggleTheme();
+      break;
+    case "m": case "M":
+      toggleSound();
       break;
     case "?":
       e.preventDefault();
@@ -881,6 +923,7 @@ function toggleTheme() {
   render();
 }
 themeToggle.addEventListener("click", toggleTheme);
+soundToggle.addEventListener("click", toggleSound);
 
 let resizeRaf = null;
 window.addEventListener("resize", () => {
@@ -892,6 +935,7 @@ window.addEventListener("resize", () => {
 });
 
 // ---------- Init ----------
+initSound();
 syncAlgoMeta();
 regenerate(Number(sizeSlider.value));
 maybeShowOnboarding();
